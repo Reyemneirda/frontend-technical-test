@@ -3,7 +3,6 @@ import {
   createContext,
   PropsWithChildren,
   useCallback,
-  useContext,
   useMemo,
   useState,
 } from "react";
@@ -25,7 +24,7 @@ export type Authentication = {
 };
 
 export const AuthenticationContext = createContext<Authentication | undefined>(
-  undefined,
+  undefined
 );
 
 export const AuthenticationProvider: React.FC<PropsWithChildren> = ({
@@ -43,7 +42,7 @@ export const AuthenticationProvider: React.FC<PropsWithChildren> = ({
         userId: jwtDecode<{ id: string }>(token).id,
       });
     },
-    [setState],
+    [setState]
   );
 
   const signout = useCallback(() => {
@@ -52,7 +51,7 @@ export const AuthenticationProvider: React.FC<PropsWithChildren> = ({
 
   const contextValue = useMemo(
     () => ({ state, authenticate, signout }),
-    [state, authenticate, signout],
+    [state, authenticate, signout]
   );
 
   return (
@@ -61,21 +60,3 @@ export const AuthenticationProvider: React.FC<PropsWithChildren> = ({
     </AuthenticationContext.Provider>
   );
 };
-
-export function useAuthentication() {
-  const context = useContext(AuthenticationContext);
-  if (!context) {
-    throw new Error(
-      "useAuthentication must be used within an AuthenticationProvider",
-    );
-  }
-  return context;
-}
-
-export function useAuthToken() {
-  const { state } = useAuthentication();
-  if (!state.isAuthenticated) {
-    throw new Error("User is not authenticated");
-  }
-  return state.token;
-}
