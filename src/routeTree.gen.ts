@@ -13,7 +13,6 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as LoginImport } from './routes/login'
 import { Route as AuthenticationImport } from './routes/_authentication'
-import { Route as RootComponentImport } from './routes/RootComponent'
 import { Route as AuthenticationIndexImport } from './routes/_authentication/index'
 import { Route as AuthenticationCreateImport } from './routes/_authentication/create'
 
@@ -26,11 +25,6 @@ const LoginRoute = LoginImport.update({
 
 const AuthenticationRoute = AuthenticationImport.update({
   id: '/_authentication',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const RootComponentRoute = RootComponentImport.update({
-  path: '/RootComponent',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -48,13 +42,6 @@ const AuthenticationCreateRoute = AuthenticationCreateImport.update({
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/RootComponent': {
-      id: '/RootComponent'
-      path: '/RootComponent'
-      fullPath: '/RootComponent'
-      preLoaderRoute: typeof RootComponentImport
-      parentRoute: typeof rootRoute
-    }
     '/_authentication': {
       id: '/_authentication'
       path: ''
@@ -89,7 +76,6 @@ declare module '@tanstack/react-router' {
 // Create and export the route tree
 
 export const routeTree = rootRoute.addChildren({
-  RootComponentRoute,
   AuthenticationRoute: AuthenticationRoute.addChildren({
     AuthenticationCreateRoute,
     AuthenticationIndexRoute,
@@ -105,13 +91,9 @@ export const routeTree = rootRoute.addChildren({
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
-        "/RootComponent",
         "/_authentication",
         "/login"
       ]
-    },
-    "/RootComponent": {
-      "filePath": "RootComponent.tsx"
     },
     "/_authentication": {
       "filePath": "_authentication.tsx",

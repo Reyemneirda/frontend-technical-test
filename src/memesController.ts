@@ -10,14 +10,26 @@ export const fetchMemes = async (token: string) => {
   const memes: GetMemesResponse["results"] = [];
   const firstPage = await getMemes(token, 1);
   memes.push(...firstPage.results);
-  const remainingPages = Math.ceil(firstPage.total / firstPage.pageSize) - 1;
+  return memes;
+};
+
+export const fetchNextMemes = async (token: string, page: number) => {
+  const memes: GetMemesResponse["results"] = [];
+  const currentPage = await getMemes(token, page);
+
+  const remainingPages =
+    Math.ceil(currentPage.total / currentPage.pageSize) - 1;
 
   const pagePromises = [];
-  for (let i = 0; i < remainingPages; i++) {
+  for (let i = 0; i < remainingPages; 1) {
     pagePromises.push(getMemes(token, i + 2));
   }
-  const pages = await Promise.all(pagePromises);
-  pages.forEach((page) => memes.push(...page.results));
+
+  for (let i = 0; i < pagePromises.length; i += 1) {
+    const chunk = pagePromises.slice(i, i + 1);
+    const pages = await Promise.all(chunk);
+    pages.forEach((page) => memes.push(...page.results));
+  }
 
   return memes;
 };
@@ -29,7 +41,24 @@ export const fetchCommentsWithAuthors = async (
   const comments: GetMemeCommentsResponse["results"] = [];
   const firstPage = await getMemeComments(token, memeId, 1);
   comments.push(...firstPage.results);
-  const remainingPages = Math.ceil(firstPage.total / firstPage.pageSize) - 1;
+  const commentsWithAuthorPromises = comments.map(async (comment) => {
+    const author = await getUserById(token, comment.authorId);
+    return { ...comment, author };
+  });
+
+  return Promise.all(commentsWithAuthorPromises);
+};
+
+export const fetchMoreComments = async (
+  token: string,
+  memeId: string,
+  page: number
+) => {
+  const comments: GetMemeCommentsResponse["results"] = [];
+  const currentPage = await getMemeComments(token, memeId, page);
+  comments.push(...currentPage.results);
+  const remainingPages =
+    Math.ceil(currentPage.total / currentPage.pageSize) - 1;
 
   const pagePromises = [];
   for (let i = 0; i < remainingPages; i++) {
@@ -42,7 +71,6 @@ export const fetchCommentsWithAuthors = async (
     const author = await getUserById(token, comment.authorId);
     return { ...comment, author };
   });
-
   return Promise.all(commentsWithAuthorPromises);
 };
 

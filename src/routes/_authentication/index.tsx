@@ -49,9 +49,7 @@ export const MemeFeedPage: React.FC = () => {
       await createMemeComment(token, data.memeId, data.content);
     },
   });
-  if (isLoading) {
-    return <Loader data-testid="meme-feed-loader" />;
-  }
+
   return (
     <Flex width="full" height="full" justifyContent="center" overflowY="auto">
       <VStack
@@ -60,6 +58,7 @@ export const MemeFeedPage: React.FC = () => {
         maxWidth={800}
         divider={<StackDivider border="gray.200" />}
       >
+        {isLoading && <Loader data-testid="meme-feed-loader" />}
         {memes?.map((meme) => {
           return (
             <VStack key={meme.id} p={4} width="full" align="stretch">
@@ -166,48 +165,7 @@ export const MemeFeedPage: React.FC = () => {
                     </Flex>
                   </form>
                 </Box>
-                <VStack align="stretch" spacing={4}>
-                  {meme.comments.map((comment) => (
-                    <Flex key={comment.id}>
-                      <Avatar
-                        borderWidth="1px"
-                        borderColor="gray.300"
-                        size="sm"
-                        name={comment.author.username}
-                        src={comment.author.pictureUrl}
-                        mr={2}
-                      />
-                      <Box p={2} borderRadius={8} bg="gray.50" flexGrow={1}>
-                        <Flex
-                          justifyContent="space-between"
-                          alignItems="center"
-                        >
-                          <Flex>
-                            <Text
-                              data-testid={`meme-comment-author-${meme.id}-${comment.id}`}
-                            >
-                              {comment.author.username}
-                            </Text>
-                          </Flex>
-                          <Text
-                            fontStyle="italic"
-                            color="gray.500"
-                            fontSize="small"
-                          >
-                            {format(comment.createdAt)}
-                          </Text>
-                        </Flex>
-                        <Text
-                          color="gray.500"
-                          whiteSpace="pre-line"
-                          data-testid={`meme-comment-content-${meme.id}-${comment.id}`}
-                        >
-                          {comment.content}
-                        </Text>
-                      </Box>
-                    </Flex>
-                  ))}
-                </VStack>
+                <VStack align="stretch" spacing={4}></VStack>
               </Collapse>
             </VStack>
           );
