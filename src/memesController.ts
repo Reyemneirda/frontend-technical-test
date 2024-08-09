@@ -6,11 +6,15 @@ import {
   GetMemeCommentsResponse,
 } from "./api"; // Adjust the import paths as necessary
 
-export const fetchMemes = async (token: string) => {
+export const fetchMemes = async (
+  token: string,
+  page: number,
+  existingMemes: GetMemesResponse["results"] = []
+) => {
   const memes: GetMemesResponse["results"] = [];
-  const firstPage = await getMemes(token, 1);
-  memes.push(...firstPage.results);
-  return memes;
+  const currentPage = await getMemes(token, page);
+  memes.push(...currentPage.results);
+  return [...existingMemes, ...memes];
 };
 
 export const fetchNextMemes = async (token: string, page: number) => {
@@ -74,9 +78,12 @@ export const fetchMoreComments = async (
   return Promise.all(commentsWithAuthorPromises);
 };
 
-export const fetchMemesWithAuthorsAndComments = async (token: string) => {
-  const memes = await fetchMemes(token);
-
+export const fetchMemesWithAuthorsAndComments = async (
+  token: string,
+  page: number,
+  currentMemes: GetMemesResponse["results"] = []
+) => {
+  const memes = await fetchMemes(token, page, currentMemes);
   const memesWithAuthorAndCommentsPromises = memes.map(async (meme) => {
     const author = await getUserById(token, meme.authorId);
     const comments = await fetchCommentsWithAuthors(token, meme.id);

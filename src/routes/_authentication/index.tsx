@@ -18,17 +18,19 @@ import { format } from "timeago.js";
 import { createMemeComment, getUserById } from "../../api";
 import { Loader } from "../../components/loader";
 import { MemePicture } from "../../components/meme-picture";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { useAuthToken } from "../../hooks/useAuthentication";
 import { fetchMemesWithAuthorsAndComments } from "../../memesController";
 
 export const MemeFeedPage: React.FC = () => {
   const token = useAuthToken();
+  const [currentPage, setCurrentPage] = useState(1);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   const { isLoading, data: memes } = useQuery({
     queryKey: ["memes"],
-    queryFn: () => fetchMemesWithAuthorsAndComments(token),
+    queryFn: () => fetchMemesWithAuthorsAndComments(token, currentPage, memes),
   });
 
   const { data: user } = useQuery({
@@ -49,7 +51,29 @@ export const MemeFeedPage: React.FC = () => {
       await createMemeComment(token, data.memeId, data.content);
     },
   });
+  useEffect(() => {
+    if (observerRef.current) observerRef.current.disconnect();
 
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setCurrentPage((prevPage) => prevPage + 1);
+        }
+      },
+      {
+        root: null,
+        rootMargin: "0px",
+        threshold: 1.0,
+      }
+    );
+
+    const lastMemeElement = document.querySelector("#last-meme");
+    if (lastMemeElement) {
+      observerRef.current.observe(lastMemeElement);
+    }
+
+    return () => observerRef.current?.disconnect();
+  }, [memes]);
   return (
     <Flex width="full" height="full" justifyContent="center" overflowY="auto">
       <VStack
@@ -58,10 +82,17 @@ export const MemeFeedPage: React.FC = () => {
         maxWidth={800}
         divider={<StackDivider border="gray.200" />}
       >
-        {isLoading && <Loader data-testid="meme-feed-loader" />}
-        {memes?.map((meme) => {
+        {memes?.map((meme, index) => {
+          const isLastMeme = index === memes.flat().length - 2;
+
           return (
-            <VStack key={meme.id} p={4} width="full" align="stretch">
+            <VStack
+              key={meme.id}
+              p={4}
+              width="full"
+              align="stretch"
+              id={isLastMeme ? "last-meme" : undefined}
+            >
               <Flex justifyContent="space-between" alignItems="center">
                 <Flex>
                   <Avatar
@@ -165,11 +196,53 @@ export const MemeFeedPage: React.FC = () => {
                     </Flex>
                   </form>
                 </Box>
-                <VStack align="stretch" spacing={4}></VStack>
+                <VStack align="stretch" spacing={4}>
+                  {meme.comments.map((comment) => (
+                    <Flex key={comment.id}>
+                      <Avatar
+                        borderWidth="1px"
+                        borderColor="gray.300"
+                        size="sm"
+                        name={comment.author.username}
+                        src={comment.author.pictureUrl}
+                        mr={2}
+                      />
+                      <Box p={2} borderRadius={8} bg="gray.50" flexGrow={1}>
+                        <Flex
+                          justifyContent="space-between"
+                          alignItems="center"
+                        >
+                          <Flex>
+                            <Text
+                              data-testid={`meme-comment-author-${meme.id}-${comment.id}`}
+                            >
+                              {comment.author.username}
+                            </Text>
+                          </Flex>
+                          <Text
+                            fontStyle="italic"
+                            color="gray.500"
+                            fontSize="small"
+                          >
+                            {format(comment.createdAt)}
+                          </Text>
+                        </Flex>
+                        <Text
+                          color="gray.500"
+                          whiteSpace="pre-line"
+                          data-testid={`meme-comment-content-${meme.id}-${comment.id}`}
+                        >
+                          {comment.content}
+                        </Text>
+                      </Box>
+                    </Flex>
+                  ))}
+                </VStack>
               </Collapse>
             </VStack>
           );
         })}
+        {isLoading && <Loader data-testid="meme-feed-loader" />}
       </VStack>
     </Flex>
   );
